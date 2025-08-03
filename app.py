@@ -284,16 +284,16 @@ def init_db():
                       ('testuser', 'test@shop.com', hashlib.md5('test'.encode()).hexdigest(), 'user', '+1234567895', '987 Guest Way', 75.50))
         
         # Insert sample products with enhanced details and higher stock
-        cursor.execute("INSERT INTO products (name, description, price, stock, image_url, is_featured) VALUES (?, ?, ?, ?, ?, ?)", 
-                      ('Gaming Laptop Pro', 'High-performance gaming laptop with RTX graphics', 1299.99, 50, 'laptop.jpg', 1))
-        cursor.execute("INSERT INTO products (name, description, price, stock, image_url, is_featured) VALUES (?, ?, ?, ?, ?, ?)", 
-                      ('Smartphone X', 'Latest flagship smartphone with advanced camera', 899.99, 75, 'phone.jpg', 1))
-        cursor.execute("INSERT INTO products (name, description, price, stock, image_url) VALUES (?, ?, ?, ?, ?)", 
-                      ('Wireless Gaming Mouse', 'RGB gaming mouse with precision tracking', 59.99, 150, 'mouse.jpg'))
-        cursor.execute("INSERT INTO products (name, description, price, stock, image_url) VALUES (?, ?, ?, ?, ?)", 
-                      ('Premium Headphones', 'Noise-cancelling wireless headphones', 249.99, 100, 'headphones.jpg'))
-        cursor.execute("INSERT INTO products (name, description, price, stock, image_url) VALUES (?, ?, ?, ?, ?)", 
-                      ('Smart Watch Elite', 'Advanced fitness tracking smart watch', 199.99, 80, 'watch.jpg'))
+        cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url, is_featured) VALUES (?, ?, ?, ?, ?, ?)", 
+                      ('Gaming Laptop Pro', 'High-performance gaming laptop with RTX graphics', 1299.99, 50, 'laptop.png', 1))
+        cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url, is_featured) VALUES (?, ?, ?, ?, ?, ?)", 
+                      ('Smartphone X', 'Latest flagship smartphone with advanced camera', 899.99, 75, 'phone.png', 1))
+        cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url) VALUES (?, ?, ?, ?, ?)", 
+                      ('Wireless Gaming Mouse', 'RGB gaming mouse with precision tracking', 59.99, 150, 'mouse.png'))
+        cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url) VALUES (?, ?, ?, ?, ?)", 
+                      ('Premium Headphones', 'Noise-cancelling wireless headphones', 249.99, 100, 'headphones.png'))
+        cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url) VALUES (?, ?, ?, ?, ?)", 
+                      ('Smart Watch Elite', 'Advanced fitness tracking smart watch', 199.99, 80, 'watch.png'))
         
         # Insert sample coupons with creator
         cursor.execute("INSERT INTO coupons (code, discount_percent, usage_limit, created_by) VALUES (?, ?, ?, ?)", 
@@ -632,7 +632,7 @@ def view_cart():
     total_price = 0
     
     for product_id, quantity in session['cart'].items():
-        cursor.execute("SELECT id, name, price, stock FROM products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT id, name, price, stock_quantity FROM products WHERE id = ?", (product_id,))
         product = cursor.fetchone()
         
         if product:
@@ -680,7 +680,7 @@ def checkout():
     total_price = 0
     
     for product_id, quantity in session['cart'].items():
-        cursor.execute("SELECT id, name, price, stock FROM products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT id, name, price, stock_quantity FROM products WHERE id = ?", (product_id,))
         product = cursor.fetchone()
         
         if product:
@@ -735,7 +735,7 @@ def apply_coupon():
     cart_items = []
     
     for product_id, quantity in session['cart'].items():
-        cursor.execute("SELECT id, name, price, stock FROM products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT id, name, price, stock_quantity FROM products WHERE id = ?", (product_id,))
         product = cursor.fetchone()
         
         if product:
@@ -890,7 +890,7 @@ def purchase():
     total_price = 0
     
     for product_id, quantity in session['cart'].items():
-        cursor.execute("SELECT id, name, price, stock FROM products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT id, name, price, stock_quantity FROM products WHERE id = ?", (product_id,))
         product = cursor.fetchone()
         
         if not product:
