@@ -1,0 +1,13 @@
+Welcome to the File Viewer!
+
+This is a default file for testing the file viewer functionality.
+
+⚠️ WARNING: This endpoint is vulnerable to Local File Inclusion (LFI)
+
+Try accessing system files by modifying the 'file' parameter:
+- ?file=../../../etc/passwd (Linux/Mac)
+- ?file=..\..\..\windows\system32\drivers\etc\hosts (Windows)
+- ?file=app.py (Application source code)
+- ?file=requirements.txt (Project dependencies)
+
+Educational Purpose: This vulnerability allows attackers to read sensitive files on the server.

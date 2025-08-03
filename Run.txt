@@ -1,0 +1,1 @@
+cd "/Users/roshanajith/Documents/Coding/Cursor/Web Dev/Dynamic/Vulnerable-Lab" && source venv_new/bin/activate && python app.py

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - SecureShop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-user-edit"></i> Edit User: {{ user[1] }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ user[1] }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ user[2] }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="role" class="form-label">User Role</label>
+                                <select class="form-control" id="role" name="role">
+                                    <option value="user" {% if user[4] == 'user' %}selected{% endif %}>User</option>
+                                    <option value="seller" {% if user[4] == 'seller' %}selected{% endif %}>Seller</option>
+                                    <option value="moderator" {% if user[4] == 'moderator' %}selected{% endif %}>Moderator</option>
+                                    <option value="admin" {% if user[4] == 'admin' %}selected{% endif %}>Administrator</option>
+                                    <option value="guest" {% if user[4] == 'guest' %}selected{% endif %}>Guest</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if user[5] == 1 %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Account Active
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="phone" name="phone" value="{{ user[7] or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="address" name="address" value="{{ user[8] or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Statistics -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Account Information</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>User ID</h6>
+                                            <span class="badge bg-secondary">{{ user[0] }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>Created</h6>
+                                            <small>{{ user[9][:10] if user[9] else 'N/A' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>Last Login</h6>
+                                            <small>{{ user[10][:16] if user[10] else 'Never' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>Failed Attempts</h6>
+                                            <span class="badge {% if user[11] > 0 %}bg-warning{% else %}bg-success{% endif %}">{{ user[11] or 0 }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="/admin/users" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="button" class="btn btn-warning me-md-2" onclick="resetUserPassword()">
+                            <i class="fas fa-key"></i> Reset Password
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VULNERABLE: Admin functions exposed in client-side -->
+<script>
+const userId = {{ user[0] }};
+
+function resetUserPassword() {
+    const newPassword = prompt('Enter new password for {{ user[1] }}:');
+    if (newPassword) {
+        // VULNERABLE: Password in URL parameters
+        window.location.href = `/admin/reset_password/${userId}?password=${encodeURIComponent(newPassword)}`;
+    }
+}
+
+// VULNERABLE: Expose user data
+window.currentUserData = {
+    id: {{ user[0] }},
+    username: '{{ user[1] }}',
+    email: '{{ user[2] }}',
+    role: '{{ user[4] }}',
+    active: {{ user[5] }},
+    phone: '{{ user[7] or "" }}',
+    address: '{{ user[8] or "" }}'
+};
+
+console.log('Editing user:', window.currentUserData);
+</script>
+{% endblock %}

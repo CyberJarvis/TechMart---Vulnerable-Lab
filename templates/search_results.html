@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Vulnerable E-Commerce{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <!-- VULNERABILITY: XSS - Query displayed without escaping -->
+                    <h2>Search Results for: "{{ query|safe }}"</h2>
+                    {% if total_results is defined %}
+                        <p class="text-muted">{{ total_results }} results found</p>
+                    {% endif %}
+                </div>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Messages -->
+    {% if error %}
+    <div class="alert alert-danger">
+        <!-- VULNERABILITY: Information disclosure in error messages -->
+        {{ error|safe }}
+    </div>
+    {% endif %}
+
+    <!-- Search Suggestions (SSTI Vulnerability) -->
+    {% if suggestions %}
+    <div class="alert alert-info">
+        {% for suggestion in suggestions %}
+            <!-- VULNERABILITY: SSTI - User input rendered as template -->
+            {{ suggestion|safe }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- No Results Message -->
+    {% if products|length == 0 and not error %}
+    <div class="alert alert-warning">
+        <h4>No products found</h4>
+        <p>Try these search tips:</p>
+        <ul>
+            <li>Check your spelling</li>
+            <li>Try more general keywords</li>
+            <li>Use fewer keywords</li>
+            <!-- VULNERABILITY: XSS in reflected search term -->
+            <li>Search for "{{ query|safe }}" in a different category</li>
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Search Results -->
+    {% if products|length > 0 %}
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <img src="{{ '/static/images/' + product[6] if product[6] else '/static/images/laptop.png' }}" 
+                     class="card-img-top" alt="{{ product[1] }}" style="height: 200px; object-fit: cover;">
+                <div class="card-body d-flex flex-column">
+                    <!-- VULNERABILITY: XSS in product data -->
+                    <h5 class="card-title">{{ product[1]|safe }}</h5>
+                    <p class="card-text flex-grow-1">{{ product[2]|safe }}</p>
+                    
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="h4 text-primary">${{ "%.2f"|format(product[3]) }}</span>
+                            <span class="badge badge-secondary">{{ product[4] }}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Stock: {{ product[5] }}</small>
+                            <div class="btn-group">
+                                <a href="/product/{{ product[0] }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <form method="POST" action="/add_to_cart" class="d-inline">
+                                    <input type="hidden" name="product_id" value="{{ product[0] }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-cart-plus"></i> Add to Cart
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Advanced Search Options -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Advanced Search Options</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="/search">
+                        <input type="hidden" name="q" value="{{ query }}">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Category:</label>
+                                <select name="category" class="form-control">
+                                    <option value="">All Categories</option>
+                                    <option value="Electronics" {% if category == 'Electronics' %}selected{% endif %}>Electronics</option>
+                                    <option value="Gaming" {% if category == 'Gaming' %}selected{% endif %}>Gaming</option>
+                                    <option value="Accessories" {% if category == 'Accessories' %}selected{% endif %}>Accessories</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Price Range:</label>
+                                <select name="price_range" class="form-control">
+                                    <option value="">Any Price</option>
+                                    <option value="0-50" {% if price_range == '0-50' %}selected{% endif %}>$0 - $50</option>
+                                    <option value="50-100" {% if price_range == '50-100' %}selected{% endif %}>$50 - $100</option>
+                                    <option value="100+" {% if price_range == '100+' %}selected{% endif %}>$100+</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>&nbsp;</label><br>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Filter Results
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Autocomplete Script -->
+<script>
+$(document).ready(function() {
+    // VULNERABILITY: XSS in autocomplete functionality
+    $('input[name="q"]').on('input', function() {
+        var term = $(this).val();
+        if (term.length >= 2) {
+            $.get('/api/search_autocomplete', {term: term}, function(data) {
+                // VULNERABILITY: No XSS protection in autocomplete results
+                var suggestions = data.map(function(item) {
+                    return '<div class="autocomplete-item" onclick="selectSuggestion(\'' + item + '\')">' + item + '</div>';
+                }).join('');
+                
+                $('#autocomplete-results').html(suggestions).show();
+            });
+        } else {
+            $('#autocomplete-results').hide();
+        }
+    });
+});
+
+function selectSuggestion(suggestion) {
+    $('input[name="q"]').val(suggestion);
+    $('#autocomplete-results').hide();
+    $('form').submit();
+}
+</script>
+
+<style>
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+.autocomplete-item:hover {
+    background-color: #f8f9fa;
+}
+#autocomplete-results {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 100%;
+}
+</style>
+{% endblock %}

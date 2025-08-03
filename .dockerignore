@@ -1,0 +1,90 @@
+# TechMart Vulnerable Lab - Docker Ignore
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database files (will be created in container)
+*.db
+*.sqlite
+*.sqlite3
+
+# Test results
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation source (keep built docs)
+docs/source/
+*.md
+CHANGELOG.md
+CONTRIBUTING.md
+
+# Development files
+.env.local
+.env.development
+.env.test
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Large files that shouldn't be in container
+*.zip
+*.tar.gz
+*.rar
+
+# Keep these files for educational purposes:
+# !README.md
+# !SECURITY.md
+# !LICENSE

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>🛒 Checkout</h2>
+    
+    <div class="row">
+        <!-- Order Summary -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="row border-bottom pb-2 mb-2">
+                        <div class="col-md-6">
+                            <strong>{{ item.name }}</strong>
+                        </div>
+                        <div class="col-md-2">
+                            ${{ "%.2f"|format(item.price) }}
+                        </div>
+                        <div class="col-md-2">
+                            Qty: {{ item.quantity }}
+                        </div>
+                        <div class="col-md-2">
+                            ${{ "%.2f"|format(item.item_total) }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-8">
+                            <div class="border-top pt-3">
+                                <div class="row">
+                                    <div class="col-6"><strong>Subtotal:</strong></div>
+                                    <div class="col-6 text-end">${{ "%.2f"|format(total_price) }}</div>
+                                </div>
+                                
+                                {% if discount %}
+                                <div class="row text-success">
+                                    <div class="col-6"><strong>Discount:</strong></div>
+                                    <div class="col-6 text-end">-${{ "%.2f"|format(discount) }}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6"><h4>Final Total:</h4></div>
+                                    <div class="col-6 text-end"><h4 class="text-success">${{ "%.2f"|format(final_price) }}</h4></div>
+                                </div>
+                                {% else %}
+                                <div class="row">
+                                    <div class="col-6"><h4>Total:</h4></div>
+                                    <div class="col-6 text-end"><h4>${{ "%.2f"|format(total_price) }}</h4></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment & Coupon Section -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>💰 Payment & Coupons</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Wallet Balance -->
+                    <div class="alert alert-info">
+                        <strong>💳 Wallet Balance:</strong><br>
+                        ${{ "%.2f"|format(user_balance) }}
+                        
+                        {% set checkout_total = final_price if final_price else total_price %}
+                        {% if user_balance < checkout_total %}
+                        <div class="text-danger mt-2">
+                            ⚠️ Insufficient funds!<br>
+                            You need ${{ "%.2f"|format(checkout_total - user_balance) }} more.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Coupon Application Section -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6>🎫 Apply Coupon Code</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if coupon_message %}
+                            <div class="alert {% if 'applied' in coupon_message %}alert-success{% else %}alert-danger{% endif %} alert-sm">
+                                {{ coupon_message }}
+                            </div>
+                            {% endif %}
+                            
+                            <form method="POST" action="{{ url_for('apply_coupon') }}">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="coupon_code" 
+                                           placeholder="Enter coupon code" 
+                                           value="{{ coupon_code if coupon_code else '' }}">
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        🎯 Apply
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <small class="form-text text-muted">
+                                💡 Try these codes: 
+                                {% for coupon in available_coupons %}
+                                <span class="badge bg-secondary">{{ coupon[0] }}</span>
+                                {% endfor %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Coupon Section -->
+                    <form method="POST" action="{{ url_for('purchase') }}">
+                        {% if applied_coupon %}
+                        <input type="hidden" name="coupon_code" value="{{ coupon_code }}">
+                        {% endif %}
+                        
+                        <!-- Available Coupons Info -->
+                        <div class="card mb-3" style="font-size: 0.85em;">
+                            <div class="card-body">
+                                <h6>📋 Available Coupons:</h6>
+                                {% for coupon in available_coupons %}
+                                <div class="mb-1">
+                                    <strong>{{ coupon[0] }}</strong>: {{ coupon[1] }}% off
+                                    <span class="text-muted">(Used: {{ coupon[2] }}/{{ coupon[3] }})</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Purchase Button -->
+                        {% set checkout_total = final_price if final_price else total_price %}
+                        {% if user_balance >= checkout_total %}
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            🚀 Complete Purchase - ${{ "%.2f"|format(checkout_total) }}
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-secondary btn-lg w-100" disabled>
+                            💸 Insufficient Funds (Need ${{ "%.2f"|format(checkout_total) }})
+                        </button>
+                        {% endif %}
+                    </form>
+                    
+                    <div class="mt-3">
+                        <a href="{{ url_for('view_cart') }}" class="btn btn-outline-secondary">
+                            ← Back to Cart
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

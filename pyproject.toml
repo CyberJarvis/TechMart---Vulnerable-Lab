@@ -1,0 +1,11 @@
+[tool.pyright]
+venvPath = "."
+venv = "venv"
+pythonVersion = "3.13"
+include = ["**/*.py"]
+exclude = ["**/node_modules", "**/__pycache__", "**/.*"]
+
+[tool.pylsp-mypy]
+enabled = true
+live_mode = true
+strict = true

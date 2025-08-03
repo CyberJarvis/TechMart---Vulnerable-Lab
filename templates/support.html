@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Support Center - SecureShop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-headset"></i> Support Center</h2>
+            <a href="/support/create" class="btn btn-success">
+                <i class="fas fa-plus"></i> Create Ticket
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-info-circle"></i> Support Information</h5>
+            </div>
+            <div class="card-body">
+                <h6>Contact Methods:</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-envelope"></i> support@secureshop.com</li>
+                    <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
+                    <li><i class="fas fa-clock"></i> Mon-Fri 9AM-6PM EST</li>
+                </ul>
+                
+                <h6>Common Issues:</h6>
+                <ul class="list-unstyled">
+                    <li><a href="#" class="text-decoration-none">Login Problems</a></li>
+                    <li><a href="#" class="text-decoration-none">Payment Issues</a></li>
+                    <li><a href="#" class="text-decoration-none">Order Status</a></li>
+                    <li><a href="#" class="text-decoration-none">Account Management</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-ticket-alt"></i> Your Support Tickets</h5>
+            </div>
+            <div class="card-body">
+                {% if tickets %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ticket #</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets %}
+                            <tr>
+                                <td><span class="badge bg-secondary">#{{ ticket[0] }}</span></td>
+                                <td>
+                                    <strong>{{ ticket[2] }}</strong>
+                                    {% if ticket[3]|length > 50 %}
+                                        <br><small class="text-muted">{{ ticket[3][:50] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ticket[4] == 'open' %}
+                                        <span class="badge bg-warning">Open</span>
+                                    {% elif ticket[4] == 'closed' %}
+                                        <span class="badge bg-success">Closed</span>
+                                    {% elif ticket[4] == 'in_progress' %}
+                                        <span class="badge bg-info">In Progress</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ ticket[4].title() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ticket[5] == 'high' %}
+                                        <span class="badge bg-danger">High</span>
+                                    {% elif ticket[5] == 'medium' %}
+                                        <span class="badge bg-warning">Medium</span>
+                                    {% elif ticket[5] == 'low' %}
+                                        <span class="badge bg-info">Low</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ ticket[5].title() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ticket[7][:10] if ticket[7] else 'N/A' }}</td>
+                                <td>{{ ticket[8][:10] if ticket[8] else 'N/A' }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewTicket({{ ticket[0] }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                    <h5>No Support Tickets</h5>
+                    <p class="text-muted">You haven't created any support tickets yet.</p>
+                    <a href="/support/create" class="btn btn-primary">Create Your First Ticket</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ticket Details Modal -->
+<div class="modal fade" id="ticketModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ticket Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="ticketModalBody">
+                <!-- Ticket details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewTicket(ticketId) {
+    // VULNERABLE: Direct API access without proper authentication
+    fetch(`/api/ticket/${ticketId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            // VULNERABLE: XSS in modal content
+            const modalBody = document.getElementById('ticketModalBody');
+            modalBody.innerHTML = `
+                <h6>Subject: ${data.subject}</h6>
+                <p><strong>Status:</strong> ${data.status}</p>
+                <p><strong>Priority:</strong> ${data.priority}</p>
+                <p><strong>Message:</strong></p>
+                <div class="border p-3">${data.message}</div>
+                <p class="text-muted mt-3">Created: ${data.created_at}</p>
+            `;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('ticketModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load ticket details');
+        });
+}
+
+// VULNERABLE: Expose ticket data globally
+window.userTickets = {{ tickets|tojson|safe }};
+console.log('Support tickets:', window.userTickets);
+</script>
+{% endblock %}

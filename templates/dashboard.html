@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}My Account - TechMart{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-user"></i> Welcome back, {{ session.username }}!</h2>
+        <p class="text-muted">Manage your account and view your order history</p>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-shopping-bag"></i> Order History</h5>
+            </div>
+            <div class="card-body">
+                {% if orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order #</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th>Promo Used</th>
+                                <th>Date</th>
+                                <th>Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td><span class="badge bg-secondary">#{{ order[0] }}</span></td>
+                                <td>{{ order[8] }}</td>
+                                <td>{{ order[3] }}</td>
+                                <td class="text-success fw-bold">${{ "%.2f"|format(order[4]) }}</td>
+                                <td>
+                                    {% if order[5] %}
+                                        <span class="badge bg-success">{{ order[5] }}</span>
+                                    {% else %}
+                                        <span class="text-muted">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ order[7] }}</td>
+                                <td>
+                                    <a href="{{ url_for('receipt', order_id=order[0]) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-receipt"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    You haven't made any orders yet. <a href="{{ url_for('home') }}">Start shopping!</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Wallet Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-wallet"></i> Account Balance</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 class="text-success mb-3">${{ "%.2f"|format(session.get('wallet_balance', 0.0)) }}</h3>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('wallet') }}" class="btn btn-success">
+                        <i class="fas fa-eye"></i> View Transactions
+                    </a>
+                    {% if session.role in ['admin', 'moderator'] %}
+                    <a href="{{ url_for('admin_wallet') }}" class="btn btn-warning">
+                        <i class="fas fa-coins"></i> Manage Wallets
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Settings -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-cog"></i> Account Settings</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('save_preferences') }}" method="post">
+                    <div class="mb-3">
+                        <label for="theme" class="form-label">Theme Preference:</label>
+                        <select class="form-select" id="theme" name="theme">
+                            <option value="light">Light Theme</option>
+                            <option value="dark">Dark Theme</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="notifications" name="notifications">
+                        <label class="form-check-label" for="notifications">
+                            <i class="fas fa-envelope"></i> Email Notifications
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-info btn-sm w-100 mb-2">
+                        <i class="fas fa-save"></i> Save Preferences
+                    </button>
+                </form>
+                <div class="d-grid">
+                    <a href="{{ url_for('load_preferences') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-download"></i> Load Saved Preferences
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Management -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-user-cog"></i> Account Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('change_password') }}" class="btn btn-warning">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                    <a href="{{ url_for('admin_panel') }}" class="btn btn-danger">
+                        <i class="fas fa-shield-alt"></i> Admin Panel
+                    </a>
+                    <a href="{{ url_for('home') }}" class="btn btn-success">
+                        <i class="fas fa-shopping-cart"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

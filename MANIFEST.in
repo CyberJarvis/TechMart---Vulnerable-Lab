@@ -1,0 +1,28 @@
+include README.md
+include SECURITY.md
+include CONTRIBUTING.md
+include CHANGELOG.md
+include LICENSE
+include requirements.txt
+include requirements-dev.txt
+include pytest.ini
+include pyproject.toml
+include pyrightconfig.json
+include .python-version
+include docker-compose.yml
+include Dockerfile
+include .dockerignore
+
+recursive-include templates *.html
+recursive-include static *.css *.js *.png *.jpg *.gif *.ico
+recursive-include exploits *.py *.md *.html
+recursive-include tests *.py
+recursive-include documentation *.md *.rst
+
+global-exclude *.pyc
+global-exclude *~
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.db
+global-exclude *.sqlite
+global-exclude *.log

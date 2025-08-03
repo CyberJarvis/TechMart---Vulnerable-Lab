@@ -1,0 +1,54 @@
+Educational Use License (EUL)
+
+Copyright (c) 2025 TechMart Vulnerable Web Application Lab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use
+the Software solely for educational, training, and research purposes, subject
+to the following conditions:
+
+PERMITTED USES:
+- Educational instruction in cybersecurity
+- Security training and skill development
+- Penetration testing practice in controlled environments
+- Academic research in web application security
+- Personal learning and skill enhancement
+
+PROHIBITED USES:
+- Commercial deployment or distribution
+- Use against systems without explicit authorization
+- Malicious attacks against third-party systems
+- Any illegal or unethical activities
+- Production deployment in any form
+
+CONDITIONS:
+1. The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+2. Users must ensure they have proper authorization before testing against any
+   system or network.
+
+3. This software is designed to be vulnerable and should never be deployed in
+   production environments.
+
+4. Users are responsible for complying with all applicable laws and regulations
+   in their jurisdiction.
+
+5. Any modifications or derivatives must maintain this license and educational
+   focus.
+
+DISCLAIMER:
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+SECURITY WARNING:
+This software contains intentional security vulnerabilities and should never
+be deployed in production environments. The authors disclaim any responsibility
+for damages resulting from misuse of this software.
+
+For questions regarding this license, please contact the project maintainers.

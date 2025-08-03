@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Main TechMart Vulnerable Web Application
+  techmart-lab:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: techmart-vulnerable-lab
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - FLASK_APP=app.py
+      - SECRET_KEY=vulnerable-secret-key-for-education
+    volumes:
+      - ./uploads:/app/uploads
+      - ./database:/app/database
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - vulnlab-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.techmart.rule=Host(`techmart.local`)"
+      - "traefik.http.services.techmart.loadbalancer.server.port=5001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Attacker simulation server for CSRF and other client-side attacks
+  attacker-server:
+    image: nginx:alpine
+    container_name: techmart-attacker-server
+    ports:
+      - "8080:80"
+    volumes:
+      - ./exploits/web:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    networks:
+      - vulnlab-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.attacker.rule=Host(`attacker.local`)"
+
+  # Optional: Database management interface for educational purposes
+  db-admin:
+    image: adminer:latest
+    container_name: techmart-db-admin
+    ports:
+      - "8081:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=techmart-lab
+    restart: unless-stopped
+    networks:
+      - vulnlab-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`admin.local`)"
+
+  # Optional: Reverse proxy for realistic subdomain simulation
+  traefik:
+    image: traefik:v2.10
+    container_name: techmart-proxy
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8082:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - vulnlab-network
+    restart: unless-stopped
+
+networks:
+  vulnlab-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  techmart-uploads:
+  techmart-database:
+  techmart-logs:

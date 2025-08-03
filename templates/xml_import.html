@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}XML Import - SecureShop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-file-code"></i> XML Data Import</h3>
+                <p class="mb-0">Import data from XML files into the system</p>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                </div>
+                {% endif %}
+                
+                {% if success %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> {{ success }}
+                </div>
+                {% endif %}
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="xml_file" class="form-label">Select XML File</label>
+                        <input type="file" class="form-control" id="xml_file" name="xml_file" accept=".xml" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            Supported formats: XML files with product, user, or order data
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="validate_schema" name="validate_schema" checked>
+                            <label class="form-check-label" for="validate_schema">
+                                Validate XML schema
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="allow_external" name="allow_external">
+                            <label class="form-check-label" for="allow_external">
+                                Allow external entity references (Advanced)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Import XML Data
+                    </button>
+                </form>
+                
+                <hr>
+                
+                <!-- Sample XML Templates -->
+                <div class="accordion mt-4" id="xmlTemplates">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sampleXML">
+                                <i class="fas fa-file-alt"></i>&nbsp; Sample XML Format
+                            </button>
+                        </h2>
+                        <div id="sampleXML" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;products&gt;
+    &lt;product&gt;
+        &lt;name&gt;Sample Product&lt;/name&gt;
+        &lt;description&gt;Product description&lt;/description&gt;
+        &lt;price&gt;99.99&lt;/price&gt;
+        &lt;category&gt;Electronics&lt;/category&gt;
+        &lt;stock&gt;50&lt;/stock&gt;
+    &lt;/product&gt;
+&lt;/products&gt;</code></pre>
+                                <button class="btn btn-sm btn-outline-primary" onclick="downloadSampleXML()">
+                                    <i class="fas fa-download"></i> Download Sample
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VULNERABLE: XXE demonstration -->
+<script>
+function downloadSampleXML() {
+    const sampleXML = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE products [
+    <!ELEMENT products (product*)>
+    <!ELEMENT product (name, description, price, category, stock)>
+    <!ELEMENT name (#PCDATA)>
+    <!ELEMENT description (#PCDATA)>
+    <!ELEMENT price (#PCDATA)>
+    <!ELEMENT category (#PCDATA)>
+    <!ELEMENT stock (#PCDATA)>
+    <!-- XXE vulnerability example (DO NOT USE IN PRODUCTION) -->
+    <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<products>
+    <product>
+        <name>Sample Product</name>
+        <description>This is a sample product for testing XML import functionality</description>
+        <price>99.99</price>
+        <category>Electronics</category>
+        <stock>50</stock>
+    </product>
+    <product>
+        <name>Another Product</name>
+        <description>Another sample product with external entity: &xxe;</description>
+        <price>149.99</price>
+        <category>Gadgets</category>
+        <stock>25</stock>
+    </product>
+</products>`;
+    
+    const blob = new Blob([sampleXML], { type: 'text/xml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_products.xml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+// VULNERABLE: Log file upload details
+document.getElementById('xml_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        console.log('XML file selected:', {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: new Date(file.lastModified)
+        });
+        
+        // VULNERABLE: Read file content on client side
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            console.log('File content preview:', event.target.result.substring(0, 500));
+        };
+        reader.readAsText(file);
+    }
+});
+</script>
+{% endblock %}

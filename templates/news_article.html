@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article[1] }} - SecureShop News{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <article class="card">
+            <div class="card-header">
+                <h1>{{ article[1] }}</h1>
+                <div class="d-flex justify-content-between text-muted">
+                    <small><i class="fas fa-calendar"></i> {{ article[6][:10] if article[6] else 'N/A' }}</small>
+                    <small><i class="fas fa-tag"></i> {{ article[4] }}</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- VULNERABLE: XSS in article content -->
+                <div class="article-content">
+                    {{ article[2]|safe }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="/news" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to News
+                    </a>
+                    <div>
+                        <button class="btn btn-primary" onclick="shareArticle()">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                        <button class="btn btn-info" onclick="printArticle()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </article>
+        
+        <!-- Comment Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-comments"></i> Comments</h5>
+            </div>
+            <div class="card-body">
+                {% if session.user_id %}
+                <form method="POST" action="/news/{{ article[0] }}/comment">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="comment" rows="3" placeholder="Share your thoughts..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-comment"></i> Post Comment
+                    </button>
+                </form>
+                <hr>
+                {% else %}
+                <div class="alert alert-info">
+                    <a href="/login">Login</a> to post comments.
+                </div>
+                {% endif %}
+                
+                <!-- Comments would be loaded here -->
+                <div id="comments-section">
+                    <div class="text-muted text-center">
+                        <p>Comments feature coming soon!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VULNERABLE: DOM-based XSS and client-side vulnerabilities -->
+<script>
+function shareArticle() {
+    const articleTitle = '{{ article[1]|safe }}';
+    const articleUrl = window.location.href;
+    
+    // VULNERABLE: DOM-based XSS
+    const shareText = `Check out this article: ${articleTitle} - ${articleUrl}`;
+    document.getElementById('share-text').innerHTML = shareText;
+    
+    // Create hidden div for sharing
+    const shareDiv = document.createElement('div');
+    shareDiv.id = 'share-text';
+    shareDiv.style.display = 'none';
+    document.body.appendChild(shareDiv);
+    
+    if (navigator.share) {
+        navigator.share({
+            title: articleTitle,
+            text: shareText,
+            url: articleUrl
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Article link copied to clipboard!');
+        });
+    }
+}
+
+function printArticle() {
+    window.print();
+}
+
+// VULNERABLE: Expose article data
+window.articleData = {
+    id: {{ article[0] }},
+    title: '{{ article[1]|safe }}',
+    content: `{{ article[2]|safe }}`,
+    author_id: {{ article[3] }},
+    category: '{{ article[4] }}',
+    published: {{ article[5] }},
+    created_at: '{{ article[6] }}'
+};
+
+console.log('Article data:', window.articleData);
+
+// VULNERABLE: Auto-execute any script tags in content
+setTimeout(() => {
+    const content = document.querySelector('.article-content');
+    if (content) {
+        const scripts = content.querySelectorAll('script');
+        scripts.forEach(script => {
+            eval(script.textContent);
+        });
+    }
+}, 1000);
+</script>
+{% endblock %}

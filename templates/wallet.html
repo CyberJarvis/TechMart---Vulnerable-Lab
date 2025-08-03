@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}My Wallet - SecureShop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-wallet"></i> My Wallet</h2>
+        <p class="text-muted">Manage your SecureShop account balance and transactions</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h2 class="card-title">${{ "%.2f"|format(user_info[1]) }}</h2>
+                        <p class="card-text">Current Balance</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-dollar-sign fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5><i class="fas fa-user"></i> Account Information</h5>
+                <p><strong>Username:</strong> {{ user_info[0] }}</p>
+                <p><strong>Role:</strong> <span class="role-badge role-{{ user_info[2] }}">{{ user_info[2].title() }}</span></p>
+                <button class="btn btn-primary btn-sm" onclick="requestTopUp()">
+                    <i class="fas fa-plus"></i> Request Top-Up
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-history"></i> Transaction History</h5>
+                <button class="btn btn-outline-primary btn-sm" onclick="exportTransactions()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Reference</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx[8][:16] if tx[8] else 'N/A' }}</td>
+                                <td>
+                                    {% if tx[3] == 'credit' %}
+                                        <span class="badge bg-success">Credit</span>
+                                    {% elif tx[3] == 'debit' %}
+                                        <span class="badge bg-danger">Debit</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ tx[3].title() if tx[3] else 'N/A' }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tx[3] == 'credit' %}
+                                        <span class="text-success">+${{ "%.2f"|format(tx[2]) }}</span>
+                                    {% else %}
+                                        <span class="text-danger">-${{ "%.2f"|format(tx[2]) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ tx[4] or 'N/A' }}</td>
+                                <td><code>{{ tx[6] or 'N/A' }}</code></td>
+                                <td>{{ tx[8] or 'System' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h5>No Transactions Yet</h5>
+                    <p class="text-muted">Your transaction history will appear here once you start using your wallet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VULNERABLE: Hidden money addition feature for debugging -->
+<div class="d-none" id="debugPanel">
+    <div class="card mt-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h6><i class="fas fa-bug"></i> Debug Panel (Development Only)</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <button class="btn btn-outline-danger btn-sm" onclick="quickAddMoney(100)">
+                        Add $100 (Debug)
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-info btn-sm" onclick="showAdminPanel()">
+                        Admin Money Manager
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-outline-warning btn-sm" onclick="apiAddMoney()">
+                        API Add Money
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function requestTopUp() {
+    const amount = prompt('Enter the amount you would like to add to your wallet:');
+    if (amount) {
+        alert(`Top-up request for $${amount} has been submitted for admin approval.`);
+        // In a real app, this would submit a request
+        console.log('Top-up requested:', amount);
+    }
+}
+
+function exportTransactions() {
+    // VULNERABLE: Client-side data exposure
+    const transactionData = {{ transactions|tojson|safe }};
+    
+    const csvData = transactionData.map(tx => [
+        tx[6] || 'N/A',      // created_at (date)
+        tx[3],               // transaction_type
+        tx[2],               // amount
+        tx[4] || 'N/A',      // description
+        tx[0] || 'N/A',      // id (reference)
+        tx[8] || 'System'    // admin_username
+    ]);
+    
+    const csv = 'Date,Type,Amount,Description,Reference,Admin\n' + 
+                csvData.map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'wallet_transactions.csv';
+    a.click();
+}
+
+// VULNERABLE: Debug functions exposed
+function quickAddMoney(amount) {
+    // VULNERABLE: Direct API access
+    const userId = {{ session.user_id }};
+    fetch(`/quick_money?user_id=${userId}&amount=${amount}&key=admin123`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+}
+
+function showAdminPanel() {
+    // VULNERABLE: URL manipulation
+    window.open('/secret_add_money', '_blank');
+}
+
+function apiAddMoney() {
+    const amount = prompt('Enter amount to add via API:');
+    if (amount) {
+        // VULNERABLE: Hardcoded API token
+        fetch('/api/wallet/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer admin_token_123'
+            },
+            body: JSON.stringify({
+                user_id: {{ session.user_id }},
+                amount: amount
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+// VULNERABLE: Expose wallet data
+window.walletData = {
+    balance: {{ user_info[1] }},
+    username: '{{ user_info[0] }}',
+    role: '{{ user_info[2] }}',
+    transactions: {{ transactions|tojson|safe }}
+};
+
+// VULNERABLE: Show debug panel based on URL hash or local storage
+if (window.location.hash === '#debug' || localStorage.getItem('showDebug') === 'true') {
+    document.getElementById('debugPanel').classList.remove('d-none');
+    console.log('Debug panel activated');
+}
+
+// VULNERABLE: Keyboard shortcut to enable debug mode
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'M') {
+        document.getElementById('debugPanel').classList.remove('d-none');
+        localStorage.setItem('showDebug', 'true');
+        console.log('Debug mode enabled via keyboard shortcut');
+    }
+});
+
+console.log('Wallet data loaded:', window.walletData);
+</script>
+{% endblock %}

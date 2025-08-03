@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>🛒 Shopping Cart</h2>
+    
+    {% if cart_items %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Stock Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart_items %}
+                        <tr>
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td>${{ "%.2f"|format(item.price) }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ "%.2f"|format(item.item_total) }}</td>
+                            <td>
+                                {% if item.in_stock %}
+                                    <span class="badge bg-success">In Stock</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Out of Stock</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('remove_from_cart', product_id=item.id) }}" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Remove this item from cart?')">Remove</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <hr>
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>Total: ${{ "%.2f"|format(total_price) }}</h4>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg">
+                        🚀 Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <h4>Your cart is empty</h4>
+        <p>Start shopping to add items to your cart!</p>
+        <a href="{{ url_for('home') }}" class="btn btn-primary">Continue Shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

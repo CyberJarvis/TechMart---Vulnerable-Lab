@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Create Support Ticket - SecureShop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-plus"></i> Create Support Ticket</h3>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                
+                <form method="POST" action="/support/create" id="supportForm">
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="subject" name="subject" required>
+                        <div class="form-text">Brief description of your issue</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-control" id="priority" name="priority">
+                            <option value="low">Low - General question</option>
+                            <option value="medium" selected>Medium - Standard issue</option>
+                            <option value="high">High - Urgent problem</option>
+                            <option value="critical">Critical - System down</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-control" id="category" name="category">
+                            <option value="technical">Technical Issue</option>
+                            <option value="billing">Billing Question</option>
+                            <option value="account">Account Problem</option>
+                            <option value="order">Order Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="message" name="message" rows="6" required placeholder="Please describe your issue in detail..."></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            You can use HTML formatting in your message for better presentation
+                        </div>
+                    </div>
+                    
+                    <!-- VULNERABLE: Hidden field that can be manipulated -->
+                    <input type="hidden" name="user_agent" id="user_agent">
+                    <input type="hidden" name="referrer" id="referrer">
+                    <input type="hidden" name="screen_resolution" id="screen_resolution">
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/support" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Submit Ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Templates -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-templates"></i> Quick Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="fillTemplate('login')">
+                            Login Problem
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="fillTemplate('payment')">
+                            Payment Issue
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="fillTemplate('order')">
+                            Order Problem
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="fillTemplate('bug')">
+                            Bug Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Collect client information (some potentially sensitive)
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('user_agent').value = navigator.userAgent;
+    document.getElementById('referrer').value = document.referrer;
+    document.getElementById('screen_resolution').value = screen.width + 'x' + screen.height;
+});
+
+function fillTemplate(type) {
+    const templates = {
+        login: {
+            subject: "Cannot login to my account",
+            message: "I'm having trouble logging into my account. I've tried resetting my password but I'm still unable to access my account.",
+            category: "account",
+            priority: "medium"
+        },
+        payment: {
+            subject: "Payment processing error",
+            message: "My payment was declined but I was still charged. Please help resolve this billing issue.",
+            category: "billing", 
+            priority: "high"
+        },
+        order: {
+            subject: "Order status inquiry",
+            message: "I placed an order 3 days ago but haven't received any updates. Can you please check the status?",
+            category: "order",
+            priority: "medium"
+        },
+        bug: {
+            subject: "Website bug report",
+            message: "<p><strong>Steps to reproduce:</strong></p><ol><li>Step 1</li><li>Step 2</li><li>Step 3</li></ol><p><strong>Expected behavior:</strong> What should happen</p><p><strong>Actual behavior:</strong> What actually happens</p><p><strong>Browser:</strong> Chrome 91.0</p>",
+            category: "technical",
+            priority: "low"
+        }
+    };
+    
+    const template = templates[type];
+    if (template) {
+        document.getElementById('subject').value = template.subject;
+        document.getElementById('message').value = template.message;
+        document.getElementById('category').value = template.category;
+        document.getElementById('priority').value = template.priority;
+    }
+}
+
+// VULNERABLE: Log form data for "debugging"
+document.getElementById('supportForm').addEventListener('submit', function(e) {
+    const formData = new FormData(this);
+    const formObject = {};
+    formData.forEach((value, key) => {
+        formObject[key] = value;
+    });
+    
+    console.log('Support ticket data:', formObject);
+    
+    // VULNERABLE: Store sensitive data in localStorage
+    localStorage.setItem('lastSupportTicket', JSON.stringify(formObject));
+});
+
+// VULNERABLE: XSS demo in message field
+document.getElementById('message').addEventListener('blur', function() {
+    const message = this.value;
+    if (message.includes('<script>')) {
+        console.log('Script tag detected in message - this would be a vulnerability!');
+        console.log('Message content:', message);
+    }
+});
+</script>
+{% endblock %}

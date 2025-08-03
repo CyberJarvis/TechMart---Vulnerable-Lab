@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Home - SecureShop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary-custom text-white p-5 rounded mb-4">
+            <h1 class="display-4"><i class="fas fa-shield-alt"></i> Welcome to SecureShop</h1>
+            <p class="lead">Professional E-Commerce Security Testing Laboratory</p>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+            <p>Explore intentional vulnerabilities in a controlled environment for educational purposes.</p>
+            {% if not session.user_id %}
+            <a class="btn btn-light btn-lg" href="{{ url_for('register') }}" role="button">
+                <i class="fas fa-user-plus"></i> Join SecureShop Today
+            </a>
+            {% else %}
+            <div class="d-flex align-items-center">
+                <span class="me-3">Welcome back, {{ session.username }}!</span>
+                <span class="role-badge role-{{ user_role }}">{{ user_role.title() }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-search"></i> Find Your Perfect Product</h4>
+            </div>
+            <div class="card-body">
+                <div class="autocomplete-container">
+                    <form method="GET" action="/search" class="mb-3">
+                        <div class="input-group input-group-lg">
+                            <input type="text" class="form-control" 
+                                   name="q" placeholder="Search for laptops, phones, accessories..." 
+                                   value="{{ request.args.get('q', '') }}"
+                                   autocomplete="off">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <!-- Autocomplete results container -->
+                    <div id="autocomplete-results" style="display: none;"></div>
+                </div>
+                
+                <!-- Quick Search Categories -->
+                <div class="row text-center">
+                    <div class="col-md-3 mb-2">
+                        <a href="/search?q=laptop&category=Electronics" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-laptop"></i><br>Laptops
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/search?q=phone&category=Electronics" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-mobile-alt"></i><br>Smartphones
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/search?q=gaming&category=Gaming" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-gamepad"></i><br>Gaming
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/search?q=accessories&category=Accessories" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-headphones"></i><br>Accessories
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Latest News Section -->
+{% if news %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3><i class="fas fa-newspaper"></i> Latest News & Updates</h3>
+        <div class="row">
+            {% for article in news %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ article[1] }}</h6>
+                        <!-- VULNERABLE: XSS in news preview -->
+                        <p class="card-text small">{{ article[2][:100]|safe }}...</p>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">{{ article[4] }}</small>
+                            <a href="/news/{{ article[0] }}" class="btn btn-sm btn-outline-primary">Read More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-end">
+            <a href="/news" class="btn btn-primary">View All News</a>
+        </div>
+        <hr>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-star"></i> Featured Products</h2>
+        <p class="text-muted">Explore our curated selection of premium items</p>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                {% if product[5] %}
+                    <img src="/static/images/{{ product[5] }}" alt="{{ product[1] }}" class="img-fluid" style="max-height: 180px;">
+                {% else %}
+                    <i class="fas fa-image fa-3x text-muted"></i>
+                {% endif %}
+            </div>
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ product[1] }}</h5>
+                <p class="card-text flex-grow-1">{{ product[2] }}</p>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">
+                        <i class="fas fa-tag"></i> {{ product[5] }}
+                    </small>
+                    <small class="text-muted">
+                        <i class="fas fa-boxes"></i> {{ product[6] }} in stock
+                    </small>
+                </div>
+                <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="text-success mb-0">${{ "%.2f"|format(product[3]) }}</h4>
+                        {% if product[8] == 1 %}
+                            <span class="badge bg-warning">Featured</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2 mt-2">
+                        <a href="{{ url_for('product_detail', product_id=product[0]) }}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h2><i class="fas fa-info-circle"></i> Why Choose TechMart?</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-shipping-fast fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Fast Shipping</h5>
+                <p class="card-text">Free shipping on all orders over $50. Get your tech delivered in 2-3 business days.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-award fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Quality Guarantee</h5>
+                <p class="card-text">All our products come with manufacturer warranty and our satisfaction guarantee.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-headset fa-3x text-info mb-3"></i>
+                <h5 class="card-title">24/7 Support</h5>
+                <p class="card-text">Our customer support team is available around the clock to help you with any questions.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
